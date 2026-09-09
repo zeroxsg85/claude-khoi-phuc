@@ -81,7 +81,22 @@ else
   echo "    - USB/ban in da cat truoc do"
   echo "  Neu dang co chuoi base64, tao lai file bang:"
   echo "    echo '<chuoi>' | base64 -d > ~/brain-sync.key && chmod 600 ~/brain-sync.key"
-  if [[ -n "${KHOA_BASE64:-}" ]]; then
+  # Uu tien 1: gist rieng tu cua chinh tai khoan GitHub vua dang nhap. Da dang nhap roi
+  # thi khong phai nho gi them — cach tien nhat khi may cu chay mat.
+  if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+    gid=$(gh gist list --limit 100 2>/dev/null | grep -i 'brain-sync.key' | head -1 | awk '{print $1}')
+    if [[ -n "$gid" ]]; then
+      if gh gist view "$gid" --raw 2>/dev/null | tr -d '\n' | base64 -d > "$HOME/brain-sync.key" 2>/dev/null \
+         && [[ -s "$HOME/brain-sync.key" ]]; then
+        chmod 600 "$HOME/brain-sync.key"; k="$HOME/brain-sync.key"
+        echo "  lay khoa tu gist rieng tu ($gid)"
+      else
+        rm -f "$HOME/brain-sync.key"
+      fi
+    fi
+  fi
+  if [[ -n "${k:-}" ]]; then :
+  elif [[ -n "${KHOA_BASE64:-}" ]]; then
     printf '%s' "$KHOA_BASE64" | base64 -d > "$HOME/brain-sync.key" && chmod 600 "$HOME/brain-sync.key"
     k="$HOME/brain-sync.key"; echo "  da dung lai khoa tu bien KHOA_BASE64"
   elif [[ -n "${KHOA:-}" ]]; then
