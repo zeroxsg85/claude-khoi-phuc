@@ -86,7 +86,10 @@ else
   if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
     gid=$(gh gist list --limit 100 2>/dev/null | grep -i 'brain-sync.key' | head -1 | awk '{print $1}')
     if [[ -n "$gid" ]]; then
-      if gh gist view "$gid" --raw 2>/dev/null | tr -d '\n' | base64 -d > "$HOME/brain-sync.key" 2>/dev/null \
+      # PHAI dung `gh api`, KHONG dung `gh gist view --raw`: cai sau in kem TEN FILE o
+      # dau nen base64 giai ra rac. Kiem bang sha256 moi lo ra (2026-09-10).
+      if gh api "gists/$gid" --jq '.files | to_entries[0].value.content' 2>/dev/null \
+         | tr -d '\n' | base64 -d > "$HOME/brain-sync.key" 2>/dev/null \
          && [[ -s "$HOME/brain-sync.key" ]]; then
         chmod 600 "$HOME/brain-sync.key"; k="$HOME/brain-sync.key"
         echo "  lay khoa tu gist rieng tu ($gid)"
